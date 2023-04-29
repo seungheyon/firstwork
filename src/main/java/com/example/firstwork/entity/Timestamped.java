@@ -1,4 +1,4 @@
-package com.example.firstwork.Entity;
+package com.example.firstwork.entity;
 
 import javax.persistence.*;
 import lombok.Getter;
