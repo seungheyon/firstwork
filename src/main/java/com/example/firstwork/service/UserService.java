@@ -5,18 +5,25 @@ import com.example.firstwork.dto.LoginRequestDto;
 import com.example.firstwork.dto.SignupRequestDto;
 import com.example.firstwork.entity.User;
 import com.example.firstwork.entity.UserRoleEnum;
+import com.example.firstwork.jwt.JwtUtil;
 import com.example.firstwork.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserService {
 
     private final UserRepository userRepository;
+    private final JwtUtil jwtUtil;
+
     private static final String ADMIN_TOKEN = "AAABnvxRVklrnYxKZ0aHgTBcXukeZygoC";
 
     @Transactional
@@ -25,38 +32,51 @@ public class UserService {
         String password = signupRequestDto.getPassword();
         //String email = signupRequestDto.getEmail();
 
-        // È¸¿ø Áßº¹ È®ÀÎ
-        Optional<User> found = userRepository.findByUsername(username);
-        if (found.isPresent()) {
-            throw new IllegalArgumentException("Áßº¹µÈ »ç¿ëÀÚ°¡ Á¸ÀçÇÕ´Ï´Ù.");
+        // username ìœ íš¨ì„± ê²€ì‚¬
+        if (!Pattern.matches("^[a-z0-9]{4,10}$", username)) {
+            throw new IllegalArgumentException("usernameì€ ìµœì†Œ 4ì ì´ìƒ, 10ì ì´í•˜ì´ë©° ì•ŒíŒŒë²³ ì†Œë¬¸ì(a~z), ìˆ«ì(0~9)ë¡œ êµ¬ì„±ë˜ì–´ì•¼ í•©ë‹ˆë‹¤.");
         }
 
-        // »ç¿ëÀÚ ROLE È®ÀÎ -> °ü¸®ÀÚ ¾øÀÌ ÀüºÎ USER ·Î Ã³¸®
+        // password ìœ íš¨ì„± ê²€ì‚¬
+        if (!Pattern.matches("^[a-zA-Z0-9]{8,15}$", password)) {
+            throw new IllegalArgumentException("passwordëŠ” ìµœì†Œ 8ì ì´ìƒ, 15ì ì´í•˜ì´ë©° ì•ŒíŒŒë²³ ëŒ€ì†Œë¬¸ì(a~z, A~Z), ìˆ«ì(0~9)ë¡œ êµ¬ì„±ë˜ì–´ì•¼ í•©ë‹ˆë‹¤.");
+        }
+
+        // íšŒì› ì¤‘ë³µ í™•ì¸
+        Optional<User> found = userRepository.findByUsername(username);
+
+        found.ifPresent(it -> {
+            throw new IllegalArgumentException("ì¤‘ë³µëœ ì‚¬ìš©ìê°€ ì¡´ì¬í•©ë‹ˆë‹¤.");
+        });
+
+        // ì‚¬ìš©ì ROLE í™•ì¸ -> ê´€ë¦¬ì ì—†ì´ ì „ë¶€ USER ë¡œ ì²˜ë¦¬
         UserRoleEnum role = UserRoleEnum.USER;
 //        if (signupRequestDto.isAdmin()) {
 //            if (!signupRequestDto.getAdminToken().equals(ADMIN_TOKEN)) {
-//                throw new IllegalArgumentException("°ü¸®ÀÚ ¾ÏÈ£°¡ Æ²·Á µî·ÏÀÌ ºÒ°¡´ÉÇÕ´Ï´Ù.");
+//                throw new IllegalArgumentException("ê´€ë¦¬ì ì•”í˜¸ê°€ í‹€ë ¤ ë“±ë¡ì´ ë¶ˆê°€ëŠ¥í•©ë‹ˆë‹¤.");
 //            }
 //            role = UserRoleEnum.ADMIN;
 //        }
 
         User user = new User(username, password, role);
-        userRepository.save(user);  //db¿¡ È¸¿ø ÀúÀå
+        userRepository.save(user);  //dbì— íšŒì› ì €ì¥
     }
 
     @Transactional(readOnly = true)
-    public void login(LoginRequestDto loginRequestDto) {
+    public void login(LoginRequestDto loginRequestDto, HttpServletResponse response) {
         String username = loginRequestDto.getUsername();
         String password = loginRequestDto.getPassword();
-
-        // »ç¿ëÀÚ È®ÀÎ
+        log.info("user login info = username  : {} , password {}",username,password);
+        // ì‚¬ìš©ì í™•ì¸
         User user = userRepository.findByUsername(username).orElseThrow(
-                () -> new IllegalArgumentException("µî·ÏµÈ »ç¿ëÀÚ°¡ ¾ø½À´Ï´Ù.")
+                () -> new IllegalArgumentException("ë“±ë¡ëœ ì‚¬ìš©ìê°€ ì—†ìŠµë‹ˆë‹¤.")
         );
 
-        // ºñ¹Ğ¹øÈ£ È®ÀÎ
+        // ë¹„ë°€ë²ˆí˜¸ í™•ì¸
         if(!user.getPassword().equals(password)){
-            throw  new IllegalArgumentException("ºñ¹Ğ¹øÈ£°¡ ÀÏÄ¡ÇÏÁö ¾Ê½À´Ï´Ù.");
+            throw  new IllegalArgumentException("ë¹„ë°€ë²ˆí˜¸ê°€ ì¼ì¹˜í•˜ì§€ ì•ŠìŠµë‹ˆë‹¤.");
         }
+        // response ê°ì²´ì˜ í•´ë”ì— key(í—¤ë” kwy)ê°’ê³¼ value(í† í°)ê°’ì„ ë„£ì–´ì¤€ë‹¤ -> jwtUtil.createToken()
+        response.addHeader(JwtUtil.AUTHORIZATION_HEADER, jwtUtil.createToken(user.getUsername(), user.getRole(), String.valueOf(user.getId())));
     }
 }

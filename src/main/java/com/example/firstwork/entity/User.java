@@ -14,8 +14,8 @@ public class User {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // nullable: null Çã¿ë ¿©ºÎ
-    // unique: Áßº¹ Çã¿ë ¿©ºÎ (false ÀÏ¶§ Áßº¹ Çã¿ë)
+    // nullable: null í—ˆìš© ì—¬ë¶€
+    // unique: ì¤‘ë³µ í—ˆìš© ì—¬ë¶€ (false ì¼ë•Œ ì¤‘ë³µ í—ˆìš©)
     @Column(nullable = false, unique = true)
     private String username;
 

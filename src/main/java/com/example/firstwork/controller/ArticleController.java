@@ -1,81 +1,83 @@
 package com.example.firstwork.controller;
 
-import com.example.firstwork.dto.LoginRequestDto;
-import com.example.firstwork.dto.SignupRequestDto;
+import com.example.firstwork.dto.*;
 import com.example.firstwork.entity.Article;
-import com.example.firstwork.dto.ArticleRequestDto;
 import com.example.firstwork.service.ArticleService;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import com.example.firstwork.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
 
 import java.util.List;
 
-// view °¡ ¾Æ´Ñ JSON, XML µîÀÇ µ¥ÀÌÅÍ¸¦ ¹İÈ¯ÇÏ±â À§ÇØ »ç¿ë
-@RestController
-@RequiredArgsConstructor    // -> Å¬·¡½ºÀÇ ÇÊµåµéÀ» ±â¹İÀ¸·Î »ı¼ºÀÚ¸¦ ÀÚµ¿À¸·Î »ı¼º
+// view ê°€ ì•„ë‹Œ JSON, XML ë“±ì˜ ë°ì´í„°ë¥¼ ë°˜í™˜í•˜ ê¸° ìœ„í•´ ì‚¬ìš©
+//@RestController
+@Controller
+@Slf4j
+@RequiredArgsConstructor    // -> í´ë˜ìŠ¤ì˜ í•„ë“œë“¤ì„ ê¸°ë°˜ìœ¼ë¡œ ìƒì„±ìë¥¼ ìë™ìœ¼ë¡œ ìƒì„±
 public class ArticleController {
 
     private final ArticleService articleService;
-    private final UserService userService;  // °´Ã¼ ¼±¾ğ
+    private final UserService userService;  // ê°ì²´ ì„ ì–¸
 
-    // ·Î±×ÀÎ, È¸¿ø°¡ÀÔ ÆÄÆ®
-    @PostMapping("/api/signup") // È¸¿ø°¡ÀÔ ¿äÃ»
-    public String signup(SignupRequestDto signupRequestDto) {
+    // ë¡œê·¸ì¸, íšŒì›ê°€ì… íŒŒíŠ¸
+    @ResponseBody
+    @PostMapping("/api/signup") // íšŒì›ê°€ì… ìš”ì²­
+    public String signup(@RequestBody SignupRequestDto signupRequestDto) {
+        log.info("signupRequestDto = {} ",signupRequestDto);
         userService.signup(signupRequestDto);
         return "redirect:/";
     }
+    @ResponseBody
     @PostMapping("/api/login")
-    public String login(LoginRequestDto loginRequestDto) {
-        userService.login(loginRequestDto);
-        return "redirect:/";
+    public String login(@RequestBody LoginRequestDto loginRequestDto, HttpServletResponse response) {
+        userService.login(loginRequestDto, response);
+        return "success";
     }
-
-
-
-    // @RequestMapping -> ¸Ş¼­µå¿¡ Àû¿ëµÇ´Â ¾î³ëÅ×ÀÌ¼ÇÀ¸·Î, Http ¿äÃ»ÀÌ µé¾î¿Ã ¶§ ÇØ´ç ¿äÃ»¿¡ µû¶ó ¸Ş¼­µå¸¦ È£Ãâ
-    @GetMapping("/")
-    public ModelAndView home() {
-        return new ModelAndView("index");
+    // @RequestMapping -> ë©”ì„œë“œì— ì ìš©ë˜ëŠ” ì–´ë…¸í…Œì´ì…˜ìœ¼ë¡œ, Http ìš”ì²­ì´ ë“¤ì–´ì˜¬ ë•Œ í•´ë‹¹ ìš”ì²­ì— ë”°ë¼ ë©”ì„œë“œë¥¼ í˜¸ì¶œ
+    @GetMapping("/a")
+        public ModelAndView home() {
+            log.info("home");
+            return new ModelAndView("index2");
     }
+    // ================= ë¡œê·¸ì¸, íšŒì›ê°€ì… ë° API ì‹¤í—˜ ë ===================
 
 
-    @GetMapping("/api/articles")
+
+    @ResponseBody
+    @GetMapping("/api/articles")    // ì „ì²´ ê²Œì‹œê¸€ì˜ ì œëª©, ì‘ì„±ì, ë‚´ìš©, ì‘ì„± ë‚ ì§œ ì¡°íšŒ (-> ì‘ì„± ë‚ ì§œ ìˆœìœ¼ë¡œ ë‚´ë¦¼ì°¨ìˆœ)
     public List<Article> getArticles() {
         return articleService.getArticles();
     }
 
-
-    @GetMapping("/api/articles/{id}")
+    @ResponseBody
+    @GetMapping("/api/articles/{id}")   // id ë¡œ ì„ íƒí•œ ê²Œì‹œê¸€ì˜ ì œëª©, ì‘ì„±ì, ë‚´ìš© , ì‘ì„± ë‚ ì§œ ì¡°íšŒ
     public Article getArticle(@PathVariable Long id) {
         return articleService.getArticle(id);
     }
 
-
-    @PostMapping("/api/articles")
-    public Article writeArticle(@RequestBody ArticleRequestDto requestDto) {
-        return articleService.writeArticle(requestDto);
+    @ResponseBody
+    @PostMapping("/api/articles")   // ê²Œì‹œê¸€ ì‘ì„±(ë¡œê·¸ì¸í•œ íšŒì›ì— í•œí•´ ì‘ì„±)
+    public Article writeArticle(@RequestBody ArticleNewRequestDto requestDto, HttpServletRequest request) {  // Token ê°’ì„ ë°›ì•„ì™€ì•¼ í•˜ê¸° ë•Œë¬¸ì— HttpServletRequest ì‚¬ìš©
+        return articleService.writeArticle(requestDto, request);
     }
 
-
-
-    @PutMapping("/api/articles/{id}")
-    public String updateArticle(@PathVariable Long id, @RequestBody ArticleRequestDto requestDto) {
-        return articleService.update(id, requestDto);
+    @ResponseBody
+    @PutMapping("/api/articles/{id}")   // ê²Œì‹œê¸€ ìˆ˜ì •(ê¸€ì„ ì‘ì„±í•œ íšŒì›ì— í•œí•´ ìˆ˜ì •)
+    public String updateArticle(@PathVariable Long id, @RequestBody ArticleNewRequestDto requestDto, HttpServletRequest request) {
+        return articleService.update(id, requestDto, request);
     }
 
-
-    @DeleteMapping("/api/articles/{id}")
+    @ResponseBody
+    @DeleteMapping("/api/articles/{id}")   // ê²Œì‹œê¸€ ì‚­ì œ(ê¸€ì„ ì‘ì„±í•œ íšŒì›ì— í•œí•´ ì‚­ì œ)
     public String deleteArticle(@PathVariable Long id, HttpServletRequest request) {
-        String password = request.getParameter("password");
-        if (password == null || password.isEmpty()) {
-            return "ºñ¹Ğ¹øÈ£¸¦ ÀÔ·ÂÇØÁÖ¼¼¿ä.";
-        }
-        return articleService.deleteArticle(id, password);
+        return articleService.deleteArticle(id, request);
     }
 
 }

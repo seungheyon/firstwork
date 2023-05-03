@@ -4,8 +4,10 @@ import com.example.firstwork.entity.Article;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface ArticleRepository extends JpaRepository<Article, Long> {
-    //À½½ÄÁ¾·ù °¡Á®¿À±â
-    List<Article> findAllByOrderByCreatedAtDesc();  // Spring JPA ¿¡¼­ Á¦°øÇÏ´Â ±âº» ¸Ş¼­µå -> Æ¯Á¤ ¿£Æ¼Æ¼ÀÇ ¸ğµç ·¹ÄÚµå¸¦ Á¶È¸ (»ı¼º ÀÏÀÚ ¼øÀ¸·Î Á¤·ÄÇÏ¿©)
+    List<Article> findAllByUserId(Long userId);
+    List<Article> findAllByOrderByCreatedAtDesc();  // Spring JPA ì—ì„œ ì œê³µí•˜ëŠ” ê¸°ë³¸ ë©”ì„œë“œ -> íŠ¹ì • ì—”í‹°í‹°ì˜ ëª¨ë“  ë ˆì½”ë“œë¥¼ ì¡°íšŒ (ìƒì„± ì¼ì ìˆœìœ¼ë¡œ ì •ë ¬í•˜ì—¬)
+    Optional<Article> findByIdAndUserId(Long id, Long userId);
 }

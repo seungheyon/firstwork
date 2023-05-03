@@ -1,6 +1,6 @@
 package com.example.firstwork.entity;
 
 public enum UserRoleEnum {
-    USER,  // »ç¿ëÀÚ ±ÇÇÑ
-    ADMIN  // °ü¸®ÀÚ ±ÇÇÑ
+    USER,  // ì‚¬ìš©ì ê¶Œí•œ
+    ADMIN  // ê´€ë¦¬ì ê¶Œí•œ
 }

@@ -1,20 +1,26 @@
 package com.example.firstwork.entity;
 
+import com.example.firstwork.dto.ArticleNewRequestDto;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.example.firstwork.dto.ArticleRequestDto;
 import javax.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+
+import java.time.LocalDateTime;
 
 @Getter
-@Entity // jPA ¿¡¼­ ¿£Æ¼Æ¼ Å¬·¡½º¿¡ ¼±¾ğÇÏ´Â ¾î³ëÅ×ÀÌ¼Ç :: ¿£Æ¼Æ¼ Å¬·¡½º´Â DBÀÇ Å×ÀÌºí¿¡ ¸ÅÇÎµÇ´Â µ¥ÀÌÅÍ
-@NoArgsConstructor  // ¸Å°³º¯¼ö°¡ ¾ø´Â ±âº» »ı¼ºÀÚ¸¦ »ı¼ºÇØÁÖ´Â lombok ¾î³ëÅ×ÀÌ¼Ç :: JPA ¿¡¼­´Â ¿£Æ¼Æ¼¸¦ »ı¼ºÇÒ ¶§, ¸Å°³º¯¼ö°¡ ¾ø´Â ±âº» »ı¼ºÀÚ¸¦ ÇÊ¿ä·Î ÇÔ
+@Entity // jPA ì—ì„œ ì—”í‹°í‹° í´ë˜ìŠ¤ì— ì„ ì–¸í•˜ëŠ” ì–´ë…¸í…Œì´ì…˜ :: ì—”í‹°í‹° í´ë˜ìŠ¤ëŠ” DBì˜ í…Œì´ë¸”ì— ë§¤í•‘ë˜ëŠ” ë°ì´í„°
+@EntityListeners(AuditingEntityListener.class)
+@NoArgsConstructor  // ë§¤ê°œë³€ìˆ˜ê°€ ì—†ëŠ” ê¸°ë³¸ ìƒì„±ìë¥¼ ìƒì„±í•´ì£¼ëŠ” lombok ì–´ë…¸í…Œì´ì…˜ :: JPA ì—ì„œëŠ” ì—”í‹°í‹°ë¥¼ ìƒì„±í•  ë•Œ, ë§¤ê°œë³€ìˆ˜ê°€ ì—†ëŠ” ê¸°ë³¸ ìƒì„±ìë¥¼ í•„ìš”ë¡œ í•¨
 public class Article extends Timestamped {
-    @Id // ¿£Æ¼Æ¼ Å¬·¡½º¿¡¼­ ÇØ´ç ÇÊµå°¡ PK ÀÓÀ» ³ªÅ¸³»´Â ¾î³ëÅ×ÀÌ¼Ç
-    @GeneratedValue(strategy = GenerationType.AUTO) // ¿£Æ¼Æ¼ Å¬·¡½ºÀÇ PK °ªÀ» ÀÚµ¿À¸·Î »ı¼º
+    @Id // ì—”í‹°í‹° í´ë˜ìŠ¤ì—ì„œ í•´ë‹¹ í•„ë“œê°€ PK ì„ì„ ë‚˜íƒ€ë‚´ëŠ” ì–´ë…¸í…Œì´ì…˜
+    @GeneratedValue(strategy = GenerationType.AUTO) // ì—”í‹°í‹° í´ë˜ìŠ¤ì˜ PK ê°’ì„ ìë™ìœ¼ë¡œ ìƒì„±
     private Long id;
 
-    @Column(nullable = false)   // ¿£Æ¼Æ¼ Å¬·¡½ºÀÇ ¸â¹ö º¯¼ö¸¦ Å×ÀÌºíÀÇ ÄÃ·³À¸·Î ÁöÁ¤
+    @Column(nullable = false)   // ì—”í‹°í‹° í´ë˜ìŠ¤ì˜ ë©¤ë²„ ë³€ìˆ˜ë¥¼ í…Œì´ë¸”ì˜ ì»¬ëŸ¼ìœ¼ë¡œ ì§€ì •
     private String title;
 
     @Column(nullable = false)
@@ -23,33 +29,37 @@ public class Article extends Timestamped {
     @Column(nullable = false)
     private String contents;
 
+    //@Column(nullable = false)
+    //@JsonIgnore // í•´ë‹¹ í•„ë“œê°€ ë°ì´í„° ì§ë ¬í™” ë˜ëŠ” ì—­ì§ë ¬í™” ê³¼ì •ì—ì„œ ë¬´ì‹œë˜ë„ë¡ ì§€ì •(ë³´ì•ˆìƒ ì¤‘ìš”í•œ ì •ë³´ë¥¼ ê°€ì§„ í•„ë“œë¥¼ ë…¸ì¶œí•˜ì§€ ì•Šê¸° ìœ„í•´ ì‚¬ìš©)
+    //private String password;
+
     @Column(nullable = false)
-    @JsonIgnore // ÇØ´ç ÇÊµå°¡ µ¥ÀÌÅÍ Á÷·ÄÈ­ ¶Ç´Â ¿ªÁ÷·ÄÈ­ °úÁ¤¿¡¼­ ¹«½ÃµÇµµ·Ï ÁöÁ¤(º¸¾È»ó Áß¿äÇÑ Á¤º¸¸¦ °¡Áø ÇÊµå¸¦ ³ëÃâÇÏÁö ¾Ê±â À§ÇØ »ç¿ë)
-    private String password;
+    private Long userId;
+
+//    @CreatedDate
+//    private LocalDateTime createdAt;
 
 
-    // ¸Å°³º¯¼ö°¡ ÀÖ´Â »ı¼ºÀÚ
-    public Article(String title, String writerName, String contents, String password) {
+    // ë§¤ê°œë³€ìˆ˜ê°€ ìˆëŠ” ìƒì„±ì
+    public Article(String title, String writerName, String contents, Long userId) {
         this.title = title;
         this.writerName = writerName;
         this.contents = contents;
-        this.password = password;
+        this.userId = userId;
     }
 
-    // ¸Å°³º¯¼ö°¡ Dto ÀÎ »ı¼ºÀÚ(?)
-    public Article(ArticleRequestDto requestDto) {
+    // ë§¤ê°œë³€ìˆ˜ê°€ Dto ì¸ ìƒì„±ì(?)
+    public Article(ArticleNewRequestDto requestDto, String userName, Long userID) {
         this.title = requestDto.getTitle();
-        this.writerName = requestDto.getAuthor();
+        this.writerName = userName;
         this.contents = requestDto.getContents();
-        this.password = requestDto.getPassword();
+        this.userId = userID;
     }
 
 
-    public void update(ArticleRequestDto requestDto) {
+    public void update(ArticleNewRequestDto requestDto) {
         this.title = requestDto.getTitle();
-        this.writerName = requestDto.getAuthor();
         this.contents = requestDto.getContents();
-        this.password = requestDto.getPassword();
     }
 
 }

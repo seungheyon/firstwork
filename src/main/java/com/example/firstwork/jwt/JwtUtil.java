@@ -22,9 +22,13 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtUtil {
 
+    // Header key ê°’
     public static final String AUTHORIZATION_HEADER = "Authorization";
+    // ì‚¬ìš©ì ê¶Œí•œ ê°’ì˜ Key
     public static final String AUTHORIZATION_KEY = "auth";
+    // Token ì‹ë³„ì
     private static final String BEARER_PREFIX = "Bearer ";
+    // í† í° ë§Œë£Œì‹œê°„
     private static final long TOKEN_TIME = 60 * 60 * 1000L;
 
     @Value("${jwt.secret.key}")
@@ -38,7 +42,7 @@ public class JwtUtil {
         key = Keys.hmacShaKeyFor(bytes);
     }
 
-    // header ÅäÅ«À» °¡Á®¿À±â
+    // header í† í°ì„ ê°€ì ¸ì˜¤ê¸°
     public String resolveToken(HttpServletRequest request) {
         String bearerToken = request.getHeader(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
@@ -47,13 +51,14 @@ public class JwtUtil {
         return null;
     }
 
-    // ÅäÅ« »ı¼º
-    public String createToken(String username, UserRoleEnum role) {
+    // í† í° ìƒì„±
+    public String createToken(String username, UserRoleEnum role, String userID) {
         Date date = new Date();
 
         return BEARER_PREFIX +
                 Jwts.builder()
                         .setSubject(username)
+                        .setId(userID)
                         .claim(AUTHORIZATION_KEY, role)
                         .setExpiration(new Date(date.getTime() + TOKEN_TIME))
                         .setIssuedAt(date)
@@ -61,24 +66,24 @@ public class JwtUtil {
                         .compact();
     }
 
-    // ÅäÅ« °ËÁõ
+    // í† í° ê²€ì¦
     public boolean validateToken(String token) {
         try {
             Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token);
             return true;
         } catch (SecurityException | MalformedJwtException e) {
-            log.info("Invalid JWT signature, À¯È¿ÇÏÁö ¾Ê´Â JWT ¼­¸í ÀÔ´Ï´Ù.");
+            log.info("Invalid JWT signature, ìœ íš¨í•˜ì§€ ì•ŠëŠ” JWT ì„œëª… ì…ë‹ˆë‹¤.");
         } catch (ExpiredJwtException e) {
-            log.info("Expired JWT token, ¸¸·áµÈ JWT token ÀÔ´Ï´Ù.");
+            log.info("Expired JWT token, ë§Œë£Œëœ JWT token ì…ë‹ˆë‹¤.");
         } catch (UnsupportedJwtException e) {
-            log.info("Unsupported JWT token, Áö¿øµÇÁö ¾Ê´Â JWT ÅäÅ« ÀÔ´Ï´Ù.");
+            log.info("Unsupported JWT token, ì§€ì›ë˜ì§€ ì•ŠëŠ” JWT í† í° ì…ë‹ˆë‹¤.");
         } catch (IllegalArgumentException e) {
-            log.info("JWT claims is empty, Àß¸øµÈ JWT ÅäÅ« ÀÔ´Ï´Ù.");
+            log.info("JWT claims is empty, ì˜ëª»ëœ JWT í† í° ì…ë‹ˆë‹¤.");
         }
         return false;
     }
 
-    // ÅäÅ«¿¡¼­ »ç¿ëÀÚ Á¤º¸ °¡Á®¿À±â
+    // í† í°ì—ì„œ ì‚¬ìš©ì ì •ë³´ ê°€ì ¸ì˜¤ê¸°
     public Claims getUserInfoFromToken(String token) {
         return Jwts.parserBuilder().setSigningKey(key).build().parseClaimsJws(token).getBody();
     }
