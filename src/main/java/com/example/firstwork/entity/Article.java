@@ -10,6 +10,8 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Getter
 @Entity // jPA 에서 엔티티 클래스에 선언하는 어노테이션 :: 엔티티 클래스는 DB의 테이블에 매핑되는 데이터
@@ -40,6 +42,7 @@ public class Article extends Timestamped {
 //    private LocalDateTime createdAt;
 
 
+
     // 매개변수가 있는 생성자
     public Article(String title, String writerName, String contents, Long userId) {
         this.title = title;
@@ -61,5 +64,6 @@ public class Article extends Timestamped {
         this.title = requestDto.getTitle();
         this.contents = requestDto.getContents();
     }
+
 
 }

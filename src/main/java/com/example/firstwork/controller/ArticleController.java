@@ -2,14 +2,17 @@ package com.example.firstwork.controller;
 
 import com.example.firstwork.dto.*;
 import com.example.firstwork.entity.Article;
+import com.example.firstwork.entity.Comment;
 import com.example.firstwork.service.ArticleService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import com.example.firstwork.service.CommentService;
 import com.example.firstwork.service.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.ModelAndView;
@@ -25,6 +28,7 @@ public class ArticleController {
 
     private final ArticleService articleService;
     private final UserService userService;  // 객체 선언
+    private final CommentService commentService;
 
     // 로그인, 회원가입 파트
     @ResponseBody
@@ -52,13 +56,13 @@ public class ArticleController {
 
     @ResponseBody
     @GetMapping("/api/articles")    // 전체 게시글의 제목, 작성자, 내용, 작성 날짜 조회 (-> 작성 날짜 순으로 내림차순)
-    public List<Article> getArticles() {
+    public List<ArticleResponseDto> getArticles() {
         return articleService.getArticles();
     }
 
     @ResponseBody
     @GetMapping("/api/articles/{id}")   // id 로 선택한 게시글의 제목, 작성자, 내용 , 작성 날짜 조회
-    public Article getArticle(@PathVariable Long id) {
+    public ArticleResponseDto getArticle(@PathVariable Long id) {
         return articleService.getArticle(id);
     }
 
@@ -78,6 +82,26 @@ public class ArticleController {
     @DeleteMapping("/api/articles/{id}")   // 게시글 삭제(글을 작성한 회원에 한해 삭제)
     public String deleteArticle(@PathVariable Long id, HttpServletRequest request) {
         return articleService.deleteArticle(id, request);
+    }
+
+
+    // Comments
+    @ResponseBody
+    @PostMapping("/api/articles/comment")
+    public CommentResponseDto writeComment(@RequestBody CommentRequestDto requestDto, HttpServletRequest request){
+        return commentService.writeComment(requestDto, request);
+    }
+
+    @ResponseBody
+    @PutMapping("/api/articles/comment/{id}")
+    public CommentResponseDto updateComment(@PathVariable Long id, @RequestBody CommentRequestDto requestDto, HttpServletRequest request){
+        return commentService.updateComment(id, requestDto, request);
+    }
+
+    @ResponseBody
+    @DeleteMapping("/api/articles/comment/{id}")
+    public ResponseEntity<String> deleteComment(@PathVariable Long id, HttpServletRequest request){
+        return commentService.deleteComment(id, request);
     }
 
 }

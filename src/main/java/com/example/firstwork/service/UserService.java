@@ -38,7 +38,7 @@ public class UserService {
         }
 
         // password 유효성 검사
-        if (!Pattern.matches("^[a-zA-Z0-9]{8,15}$", password)) {
+        if (!Pattern.matches("^[a-zA-Z0-9!@#$%^&*()]{8,15}$", password)) {
             throw new IllegalArgumentException("password는 최소 8자 이상, 15자 이하이며 알파벳 대소문자(a~z, A~Z), 숫자(0~9)로 구성되어야 합니다.");
         }
 
@@ -51,12 +51,13 @@ public class UserService {
 
         // 사용자 ROLE 확인 -> 관리자 없이 전부 USER 로 처리
         UserRoleEnum role = UserRoleEnum.USER;
-//        if (signupRequestDto.isAdmin()) {
-//            if (!signupRequestDto.getAdminToken().equals(ADMIN_TOKEN)) {
-//                throw new IllegalArgumentException("관리자 암호가 틀려 등록이 불가능합니다.");
-//            }
-//            role = UserRoleEnum.ADMIN;
-//        }
+        if (signupRequestDto.isAdmin()) {
+            if (!signupRequestDto.getAdminToken().equals(ADMIN_TOKEN)) {
+                throw new IllegalArgumentException("관리자 암호가 틀려 등록이 불가능합니다.");
+            }
+            log.info("관리자로 등록되었습니다.");
+            role = UserRoleEnum.ADMIN;
+        }
 
         User user = new User(username, password, role);
         userRepository.save(user);  //db에 회원 저장

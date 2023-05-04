@@ -9,8 +9,8 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 public interface ArticleService {
-    public List<Article> getArticles();
-    public Article getArticle(Long id);
+    public List<ArticleResponseDto> getArticles();
+    public ArticleResponseDto getArticle(Long id);
     public Article writeArticle(ArticleNewRequestDto requestDto, HttpServletRequest request);
     public String update(Long id, ArticleNewRequestDto requestDto, HttpServletRequest request);
     public String deleteArticle(Long id, HttpServletRequest request);

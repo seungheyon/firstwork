@@ -1,9 +1,9 @@
 package com.example.firstwork.service;
 
 import com.example.firstwork.dto.ArticleNewRequestDto;
-import com.example.firstwork.dto.ArticleResponseDto;
+import com.example.firstwork.dto.CommentRequestDto;
+import com.example.firstwork.dto.CommentResponseDto;
 import com.example.firstwork.entity.Article;
-import com.example.firstwork.dto.ArticleRequestDto;
 import com.example.firstwork.entity.Comment;
 import com.example.firstwork.entity.User;
 import com.example.firstwork.entity.UserRoleEnum;
@@ -14,18 +14,16 @@ import com.example.firstwork.repository.UserRepository;
 import io.jsonwebtoken.Claims;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.servlet.http.HttpServletRequest;
-import java.util.ArrayList;
-import java.util.List;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class ArticleServiceImpl implements ArticleService{
-// ArticleService 인터페이스의 구현체
+public class CommentService {
 
     // 의존성 주입
     private final ArticleRepository articleRepository;
@@ -33,39 +31,9 @@ public class ArticleServiceImpl implements ArticleService{
     private final CommentRepository commentRepository;
     private final JwtUtil jwtUtil;
 
-    @Transactional(readOnly = true)
-    public List<ArticleResponseDto> getArticles() {
-
-        // 여기부터 ArticleResponseDto 생성 및 코드 수정
-        List<ArticleResponseDto> list = new ArrayList<>();
-        List<Article> articleList;
-
-        articleList = articleRepository.findAllByOrderByCreatedAtDesc();
-
-        for (Article article : articleList) {
-            List<Comment> commentList = commentRepository.findByArticleIdOrderByCreatedAtDesc(article.getId());
-            list.add(new ArticleResponseDto(article,commentList));
-        }
-        // Article (entity) 배열로 반환하는 것과 ArticleResponseDto 배열을 만들어서 반환하는 것의 차이?
-        // -> ArticleResponseDto 로 반환하면 클라이언트가 Article 엔티티에 종속성을 가지지 않게 하며, 유지보수성이 향상됨!
-        return list;
-
-        //return articleRepository.findAllByOrderByCreatedAtDesc();
-    }
-
-
-    @Transactional(readOnly = true)
-    public ArticleResponseDto getArticle(Long id) {
-        Article article = articleRepository.findById(id).orElseThrow(
-                () -> new IllegalArgumentException("글이 존재하지 않습니다.")
-        );
-        List<Comment> commentList = commentRepository.findByArticleIdOrderByCreatedAtDesc(id);
-        return new ArticleResponseDto(article, commentList);
-    }
-
 
     @Transactional  // 글 작성 -> 로그인 한 회원만 글 작성 가능
-    public Article writeArticle(ArticleNewRequestDto requestDto, HttpServletRequest request) {
+    public CommentResponseDto writeComment(CommentRequestDto requestDto, HttpServletRequest request) {
         // Request에서 Token 가져오기
         String token = jwtUtil.resolveToken(request);
         Claims claims;  // 사용자 정보를 담는 그릇(?)
@@ -84,54 +52,15 @@ public class ArticleServiceImpl implements ArticleService{
             );
             log.info("claims.subject  : {} , claims.getId {}",claims.getSubject(),claims.getId());
             // 작성된 게시글 dB에 저장
-            Article article = new Article(requestDto, claims.getSubject(), Long.parseLong(claims.getId()));
-            articleRepository.save(article);
-            return article;
-        }
-        else{
-            log.info("Token is NULL");
-            return null;
-        }
-    }
-
-
-    @Transactional
-    public String update(Long id, ArticleNewRequestDto requestDto, HttpServletRequest request) {
-
-        String token = jwtUtil.resolveToken(request);
-        Claims claims;  // 사용자 정보를 담는 그릇(?)
-
-        if(token !=null){   // request 에 Token 이 있으면
-            // Token 검증
-            if (jwtUtil.validateToken(token)) {
-                // 토큰에서 사용자 정보 가져오기
-                claims = jwtUtil.getUserInfoFromToken(token);
-            } else {
-                throw new IllegalArgumentException("토큰이 유효하지 않습니다");
-            }
-            // 토큰에서 가져온 사용자 정보를 사용하여 DB 조회 :: ID로 조회
-            User user = userRepository.findById(Long.parseLong(claims.getId())).orElseThrow(
-                    () -> new IllegalArgumentException("사용자가 존재하지 않습니다.")
-            );
-            //log.info("claims.subject  : {} , claims.getId {}",claims.getSubject(),claims.getId());
-            // 게시글 update
-            Article article = articleRepository.findById(id).orElseThrow(
+            Article article = articleRepository.findById(requestDto.getArticleId()).orElseThrow(
                     () -> new IllegalArgumentException("글이 존재하지 않습니다.")
             );
 
-            if(user.getRole().equals(UserRoleEnum.ADMIN)){  // User 권한이 ADMIN 인지 확인
-                article.update(requestDto);
-                return article.getId() + "번 글이 수정되었습니다.(관리자 권한)";
-            }
-            else{   // User 권한이 ADMIN 이 아닐 경우 -> 글 작성자게 한해서만 수정 가능
-                if(!article.getUserId().equals(Long.parseLong(claims.getId()))){
-                    throw new IllegalArgumentException("작성자만 수정할 수 있습니다");
-                }
-                else {  // 토큰 정보의 userID와 수정을 원하는 게시글의 userID가 일치할 경우에만 글 수정 허용
-                    article.update(requestDto);
-                    return article.getId() + "번 글이 수정되었습니다.";
-                }
-            }
+            Comment comment = new Comment(requestDto);
+            commentRepository.save(comment);    //   댓글을 db에 저장
+            //article.addComment(comment);    // 댓글과 게시글을 연결
+
+            return new CommentResponseDto(comment.getContents());
         }
         else{
             log.info("Token is NULL");
@@ -139,10 +68,8 @@ public class ArticleServiceImpl implements ArticleService{
         }
     }
 
-
     @Transactional
-    public String deleteArticle(Long id, HttpServletRequest request) {
-
+    public CommentResponseDto updateComment(Long commentId, CommentRequestDto requestDto, HttpServletRequest request){
         String token = jwtUtil.resolveToken(request);
         Claims claims;  // 사용자 정보를 담는 그릇(?)
 
@@ -159,22 +86,23 @@ public class ArticleServiceImpl implements ArticleService{
                     () -> new IllegalArgumentException("사용자가 존재하지 않습니다.")
             );
             log.info("claims.subject  : {} , claims.getId {}",claims.getSubject(),claims.getId());
-            // 게시글 delete
-            Article article = articleRepository.findById(id).orElseThrow(
-                    () -> new IllegalArgumentException("글이 존재하지 않습니다.")
+
+            // 작성된 게시글 dB에 저장
+            Comment comment = commentRepository.findById(commentId).orElseThrow(
+                    () -> new IllegalArgumentException("댓글이 존재하지 않습니다.")
             );
 
             if(user.getRole().equals(UserRoleEnum.ADMIN)){  // User 권한이 ADMIN 인지 확인
-                articleRepository.deleteById(id);
-                return article.getId() + "번 글이 삭제되었습니다.(관리자 권한)";
+                comment.update(requestDto);
+                return new CommentResponseDto(comment.getContents());
             }
-            else{   // User 권한이 ADMIN 이 아닐 경우 -> 글 작성자에 한해서만 삭제 가능
-                if(!article.getUserId().equals(Long.parseLong(claims.getId()))){
-                    throw new IllegalArgumentException("작성자만 삭제할 수 있습니다");
+            else{   // User 권한이 ADMIN 이 아닐 경우 -> 글 작성자게 한해서만 수정 가능
+                if(!comment.getArticleId().equals(Long.parseLong(claims.getId()))){
+                    throw new IllegalArgumentException("작성자만 수정할 수 있습니다");
                 }
-                else {  // 토큰 정보의 userID와 수정을 원하는 게시글의 userID가 일치할 경우에만 글 삭제 허용
-                    articleRepository.deleteById(id);
-                    return article.getId() + "번 글이 삭제되었습니다.";
+                else {  // 토큰 정보의 userID와 수정을 원하는 게시글의 userID가 일치할 경우에만 글 수정 허용
+                    comment.update(requestDto);
+                    return new CommentResponseDto(comment.getContents());
                 }
             }
         }
@@ -184,5 +112,48 @@ public class ArticleServiceImpl implements ArticleService{
         }
     }
 
+    @Transactional
+    public ResponseEntity<String> deleteComment(Long commentId, HttpServletRequest request){
+        String token = jwtUtil.resolveToken(request);
+        Claims claims;  // 사용자 정보를 담는 그릇(?)
+
+        if(token !=null){   // request 에 Token 이 있으면
+            // Token 검증
+            if (jwtUtil.validateToken(token)) {
+                // 토큰에서 사용자 정보 가져오기
+                claims = jwtUtil.getUserInfoFromToken(token);
+            } else {
+                throw new IllegalArgumentException("토큰이 유효하지 않습니다");
+            }
+            // 토큰에서 가져온 사용자 정보를 사용하여 DB 조회
+            User user = userRepository.findById(Long.parseLong(claims.getId())).orElseThrow(
+                    () -> new IllegalArgumentException("사용자가 존재하지 않습니다.")
+            );
+            log.info("claims.subject  : {} , claims.getId {}",claims.getSubject(),claims.getId());
+
+            // 작성된 게시글 dB에 저장
+            Comment comment = commentRepository.findById(commentId).orElseThrow(
+                    () -> new IllegalArgumentException("댓글이 존재하지 않습니다.")
+            );
+
+            if(user.getRole().equals(UserRoleEnum.ADMIN)){  // User 권한이 ADMIN 인지 확인
+                commentRepository.deleteById(commentId);
+                return ResponseEntity.ok("Success");
+            }
+            else{   // User 권한이 ADMIN 이 아닐 경우 -> 글 작성자게 한해서만 수정 가능
+                if(!comment.getArticleId().equals(Long.parseLong(claims.getId()))){
+                    throw new IllegalArgumentException("작성자만 삭제할 수 있습니다");
+                }
+                else {  // 토큰 정보의 userID와 수정을 원하는 게시글의 userID가 일치할 경우에만 글 수정 허용
+                    commentRepository.deleteById(commentId);
+                    return ResponseEntity.ok("Success");
+                }
+            }
+        }
+        else{
+            log.info("Token is NULL");
+            return ResponseEntity.notFound().build();
+        }
+    }
 
 }
