@@ -103,7 +103,7 @@ public class CommentService {
                 else {  // 토큰 정보의 userID와 수정을 원하는 게시글의 userID가 일치할 경우에만 글 수정 허용
                     comment.update(requestDto);
                     return new CommentResponseDto(comment.getContents());
-                } //pt test
+                }
             }
         }
         else{
